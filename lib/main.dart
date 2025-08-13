@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pilulasdoconhecimento/home.dart';
-import 'package:pilulasdoconhecimento/l10n/app_localizations.dart'; // Import relativo ao seu projeto
+import 'package:pilulasdoconhecimento/l10n/app_localizations.dart';
+import 'package:pilulasdoconhecimento/login_page.dart'; // Import relativo ao seu projeto
 
 void main() {
   runApp(const MyApp());
@@ -17,7 +18,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const Home(),
+      home: const LoginPage(),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       debugShowCheckedModeBanner: false,
