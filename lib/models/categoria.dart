@@ -3,7 +3,7 @@
 import 'package:pilulasdoconhecimento/models/model_video.dart';
 
 class Categoria {
-  final String thumbnail;
+  String thumbnail;
   final List<TutorialVideo> videos;
 
   Categoria({

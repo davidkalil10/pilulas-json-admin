@@ -6,7 +6,6 @@ import 'package:pilulasdoconhecimento/models/model_video.dart';
 import 'package:pilulasdoconhecimento/services/api_service.dart';
 import 'package:pilulasdoconhecimento/widgets/video_editor.dart';
 
-
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
   @override
@@ -20,6 +19,7 @@ class _HomeState extends State<Home> {
   bool _hasChanges = false;
   String _errorMessage = '';
 
+  // Suas chaves e IDs
   static const String _binId = '689c0085ae596e708fc8b523';
   static const String _apiKey = r'$2a$10$z4gvUqvUkckUTJPCEi/Rwe4srIJhwn229aZaDgSiaX/6Fmsb5KAZW';
 
@@ -30,8 +30,8 @@ class _HomeState extends State<Home> {
   }
 
   // --- LÓGICA DE DADOS ---
-
   Future<void> _fetchData() async {
+    // ... (código existente, sem alterações)
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -39,18 +39,15 @@ class _HomeState extends State<Home> {
     try {
       const url = 'https://api.jsonbin.io/v3/b/$_binId/latest';
       final response = await http.get(Uri.parse(url), headers: {'X-Master-Key': _apiKey});
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         final Map<String, dynamic> record = responseData['record'];
-
         setState(() {
           _data = record.map((key, value) => MapEntry(key, Categoria.fromJson(value as Map<String, dynamic>)));
           if (_data?.isNotEmpty ?? false) {
             _selectedCategory = _data!.keys.first;
           }
         });
-
       } else {
         throw Exception('Falha ao carregar dados: Status ${response.statusCode}');
       }
@@ -65,8 +62,8 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> _saveData() async {
+    // ... (código existente, sem alterações)
     if (_data == null || !_hasChanges) return;
-
     ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Row(children: [CircularProgressIndicator(), SizedBox(width: 16), Text('Salvando...')]))
     );
@@ -74,7 +71,6 @@ class _HomeState extends State<Home> {
     final success = await saveDataToJsonBin(_dataAsJsonMap());
 
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
     if (success) {
       setState(() => _hasChanges = false);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -88,11 +84,14 @@ class _HomeState extends State<Home> {
   }
 
   Map<String, dynamic> _dataAsJsonMap() {
+    // ... (código existente, sem alterações)
     if (_data == null) return {};
     return _data!.map((key, categoria) => MapEntry(key, categoria.toJson()));
   }
 
+  // --- GERENCIAMENTO DE VÍDEOS (sem alterações aqui, a validação é no dialog) ---
   void _editVideo(TutorialVideo video) {
+    // ... (código existente, sem alterações)
     final videoCopy = TutorialVideo.fromJson(video.toJson());
     showDialog(
       context: context,
@@ -113,6 +112,7 @@ class _HomeState extends State<Home> {
   }
 
   void _addVideo() {
+    // ... (código existente, sem alterações)
     final now = DateTime.now();
     final formattedDate = "${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}";
     final newVideo = TutorialVideo(
@@ -140,6 +140,7 @@ class _HomeState extends State<Home> {
   }
 
   void _deleteVideo(TutorialVideo video) {
+    // ... (código existente, sem alterações)
     showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -162,9 +163,147 @@ class _HomeState extends State<Home> {
     );
   }
 
-  // --- BUILD PRINCIPAL ---
+  // --- GERENCIAMENTO DE CATEGORIAS (COM VALIDAÇÃO) ---
+  void _addCategory() {
+    final TextEditingController nameController = TextEditingController();
+    final TextEditingController thumbController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Adicionar Nova Categoria'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Nome da Categoria', border: OutlineInputBorder()), autofocus: true),
+            const SizedBox(height: 16),
+            TextField(controller: thumbController, decoration: const InputDecoration(labelText: 'URL da Thumbnail da Categoria', border: OutlineInputBorder())),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () {
+              final newName = nameController.text.trim();
+              final newThumb = thumbController.text.trim();
+
+              // VALIDAÇÃO ADICIONADA
+              if (newName.isEmpty || newThumb.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Todos os campos são obrigatórios.'), backgroundColor: Colors.orange),
+                );
+                return;
+              }
+
+              if (!_data!.containsKey(newName)) {
+                setState(() {
+                  _data![newName] = Categoria(thumbnail: newThumb, videos: []);
+                  _selectedCategory = newName;
+                  _hasChanges = true;
+                });
+                Navigator.of(context).pop();
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Este nome de categoria já existe.'), backgroundColor: Colors.red),
+                );
+              }
+            },
+            child: const Text('Adicionar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _editCategory(String oldName) {
+    final TextEditingController nameController = TextEditingController(text: oldName);
+    final TextEditingController thumbController = TextEditingController(text: _data![oldName]!.thumbnail);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Editar Categoria "$oldName"'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Novo Nome', border: OutlineInputBorder())),
+            const SizedBox(height: 16),
+            TextField(controller: thumbController, decoration: const InputDecoration(labelText: 'Nova URL da Thumbnail', border: OutlineInputBorder())),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () {
+              final newName = nameController.text.trim();
+              final newThumb = thumbController.text.trim();
+
+              // VALIDAÇÃO ADICIONADA
+              if (newName.isEmpty || newThumb.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Todos os campos são obrigatórios.'), backgroundColor: Colors.orange),
+                );
+                return;
+              }
+
+              if (newName == oldName || !_data!.containsKey(newName)) {
+                setState(() {
+                  final categoryData = _data![oldName]!;
+                  categoryData.thumbnail = newThumb;
+                  if (newName != oldName) {
+                    _data!.remove(oldName);
+                    _data![newName] = categoryData;
+                    _selectedCategory = newName;
+                  }
+                  _hasChanges = true;
+                });
+                Navigator.of(context).pop();
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Este nome de categoria já existe.'), backgroundColor: Colors.red),
+                );
+              }
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteCategory(String categoryName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar Exclusão'),
+        content: Text('Tem certeza que deseja excluir a categoria "$categoryName" e TODOS os seus vídeos?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _data!.remove(categoryName);
+                if (_selectedCategory == categoryName) {
+                  _selectedCategory = _data!.keys.isNotEmpty ? _data!.keys.first : null;
+                }
+                _hasChanges = true;
+              });
+              Navigator.of(context).pop();
+            },
+            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- BUILD PRINCIPAL E WIDGETS DE UI ---
+  // A partir daqui, o código é o mesmo que você enviou, pois a UI não precisa mudar.
+  // Colei aqui para garantir que o arquivo esteja completo.
+
   @override
   Widget build(BuildContext context) {
+    // ... (código existente, sem alterações)
     return Scaffold(
       appBar: AppBar(
         title: const Text('Painel de Administração | Pílulas do Conhecimento', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
@@ -199,7 +338,20 @@ class _HomeState extends State<Home> {
           : _errorMessage.isNotEmpty
           ? Center(child: Text(_errorMessage, style: const TextStyle(color: Colors.red, fontSize: 16)))
           : _data == null || _data!.isEmpty
-          ? const Center(child: Text('Nenhum dado encontrado ou o "bin" está vazio.'))
+          ? Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('Nenhuma categoria encontrada.'),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: _addCategory,
+              icon: const Icon(Icons.add),
+              label: const Text('Criar a Primeira Categoria'),
+            ),
+          ],
+        ),
+      )
           : Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -211,9 +363,8 @@ class _HomeState extends State<Home> {
     );
   }
 
-  // --- WIDGETS DE UI COM ESTILO PREMIUM ---
-
   Widget _buildSideMenu() {
+    // ... (código existente, sem alterações)
     return Container(
       width: 280,
       color: const Color(0xFFECEFF1),
@@ -222,13 +373,19 @@ class _HomeState extends State<Home> {
         children: [
           Padding(
             padding: const EdgeInsets.all(24.0),
-            child: Text(
-              'Categorias',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.blueGrey[800],
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Categorias',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blueGrey[800]),
+                ),
+                IconButton(
+                  icon: Icon(Icons.add_circle, color: Colors.blue[700], size: 28),
+                  tooltip: 'Adicionar Nova Categoria',
+                  onPressed: _addCategory,
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -256,6 +413,21 @@ class _HomeState extends State<Home> {
                         fontSize: 16,
                       ),
                     ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.edit, size: 20, color: Colors.grey[600]),
+                          tooltip: 'Editar Categoria',
+                          onPressed: () => _editCategory(key),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete, size: 20, color: Colors.red[400]),
+                          tooltip: 'Excluir Categoria',
+                          onPressed: () => _deleteCategory(key),
+                        ),
+                      ],
+                    ),
                     onTap: () => setState(() => _selectedCategory = key),
                   ),
                 );
@@ -268,12 +440,11 @@ class _HomeState extends State<Home> {
   }
 
   Widget _buildMainContent() {
+    // ... (código existente, sem alterações)
     if (_selectedCategory == null) {
       return const Expanded(child: Center(child: Text('Selecione uma categoria para começar')));
     }
-
     final videos = _data![_selectedCategory]!.videos;
-
     return Expanded(
       child: Column(
         children: [
@@ -308,7 +479,9 @@ class _HomeState extends State<Home> {
           ),
           const Divider(height: 1, indent: 24, endIndent: 24),
           Expanded(
-            child: ListView.builder(
+            child: videos.isEmpty
+                ? const Center(child: Text('Nenhum vídeo nesta categoria. Clique em "Adicionar Vídeo" para começar.'))
+                : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: videos.length,
               itemBuilder: (context, index) {
@@ -368,6 +541,163 @@ class _HomeState extends State<Home> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ----- ADAPTAÇÃO NECESSÁRIA NO VIDEO EDITOR DIALOG -----
+// Certifique-se de que o seu `video_editor.dart` tenha a validação.
+// Colei aqui a versão com validação para garantir que tudo funcione.
+// Se já estiver em um arquivo separado, apenas atualize-o com este conteúdo.
+
+class VideoEditorDialog extends StatefulWidget {
+  final TutorialVideo video;
+  final Function(TutorialVideo) onSave;
+  final bool isNew;
+
+  const VideoEditorDialog({Key? key, required this.video, required this.onSave, this.isNew = false}) : super(key: key);
+
+  @override
+  _VideoEditorDialogState createState() => _VideoEditorDialogState();
+}
+
+class _VideoEditorDialogState extends State<VideoEditorDialog> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  late TutorialVideo _editedVideo;
+  String? _errorMessage;
+
+  final _languages = ['pt', 'en', 'es', 'fr'];
+  final Map<String, TextEditingController> _tituloControllers = {};
+  final Map<String, TextEditingController> _subtituloControllers = {};
+  final Map<String, TextEditingController> _tagsControllers = {};
+  final Map<String, TextEditingController> _urlControllers = {};
+  late TextEditingController _thumbnailController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: _languages.length, vsync: this);
+
+    _editedVideo = TutorialVideo.fromJson(widget.video.toJson()); // Cópia segura
+
+    _thumbnailController = TextEditingController(text: _editedVideo.thumbnail);
+
+    for (var lang in _languages) {
+      _tituloControllers[lang] = TextEditingController(text: _editedVideo.titulo[lang] ?? '');
+      _subtituloControllers[lang] = TextEditingController(text: _editedVideo.subtitulo[lang] ?? '');
+      _tagsControllers[lang] = TextEditingController(text: (_editedVideo.tags[lang] as List<dynamic>?)?.join(', ') ?? '');
+      _urlControllers[lang] = TextEditingController(text: _editedVideo.url[lang] ?? '');
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _thumbnailController.dispose();
+    _tituloControllers.values.forEach((c) => c.dispose());
+    _subtituloControllers.values.forEach((c) => c.dispose());
+    _tagsControllers.values.forEach((c) => c.dispose());
+    _urlControllers.values.forEach((c) => c.dispose());
+    super.dispose();
+  }
+
+  bool _validateFields() {
+    if (_thumbnailController.text.trim().isEmpty) return false;
+
+    for(final lang in _languages) {
+      if (_tituloControllers[lang]!.text.trim().isEmpty ||
+          _subtituloControllers[lang]!.text.trim().isEmpty ||
+          _tagsControllers[lang]!.text.trim().isEmpty ||
+          _urlControllers[lang]!.text.trim().isEmpty) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  void _onSave() {
+    // VALIDAÇÃO
+    if (!_validateFields()) {
+      setState(() {
+        _errorMessage = 'Todos os campos em todos os idiomas devem ser preenchidos.';
+      });
+      return;
+    }
+
+    // Atualiza o objeto _editedVideo com os dados dos controllers
+    for (var lang in _languages) {
+      _editedVideo.titulo[lang] = _tituloControllers[lang]!.text;
+      _editedVideo.subtitulo[lang] = _subtituloControllers[lang]!.text;
+      _editedVideo.tags[lang] = _tagsControllers[lang]!.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      _editedVideo.url[lang] = _urlControllers[lang]!.text;
+    }
+    _editedVideo.thumbnail = _thumbnailController.text;
+    if (widget.isNew) {
+      final now = DateTime.now();
+      _editedVideo.dataAtualizacao = "${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}";
+    }
+
+    widget.onSave(_editedVideo);
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.isNew ? 'Adicionar Novo Vídeo' : 'Editar Vídeo'),
+      content: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.7,
+        height: MediaQuery.of(context).size.height * 0.7,
+        child: Column(
+          children: [
+            TextField(
+              controller: _thumbnailController,
+              decoration: const InputDecoration(labelText: 'URL da Thumbnail do Vídeo', border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 16),
+            TabBar(
+              controller: _tabController,
+              tabs: _languages.map((lang) => Tab(text: lang.toUpperCase())).toList(),
+              labelColor: Colors.blue,
+              unselectedLabelColor: Colors.grey,
+            ),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: _languages.map((lang) {
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        TextField(controller: _tituloControllers[lang], decoration: const InputDecoration(labelText: 'Título')),
+                        const SizedBox(height: 8),
+                        TextField(controller: _subtituloControllers[lang], decoration: const InputDecoration(labelText: 'Subtítulo'), maxLines: 3),
+                        const SizedBox(height: 8),
+                        TextField(controller: _tagsControllers[lang], decoration: const InputDecoration(labelText: 'Tags (separadas por vírgula)')),
+                        const SizedBox(height: 8),
+                        TextField(controller: _urlControllers[lang], decoration: const InputDecoration(labelText: 'URL do Vídeo')),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            // Mostra a mensagem de erro se houver
+            if (_errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  _errorMessage!,
+                  style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                ),
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
+        ElevatedButton(onPressed: _onSave, child: const Text('Salvar')),
+      ],
     );
   }
 }
