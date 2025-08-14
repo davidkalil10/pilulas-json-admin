@@ -8,6 +8,7 @@ import 'package:pilulasdoconhecimento/widgets/video_editor.dart';
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
+
   @override
   _HomeState createState() => _HomeState();
 }
@@ -18,7 +19,6 @@ class _HomeState extends State<Home> {
   bool _isLoading = true;
   bool _hasChanges = false;
   String _errorMessage = '';
-
   // Suas chaves e IDs
   static const String _binId = '689c0085ae596e708fc8b523';
   static const String _apiKey = r'$2a$10$z4gvUqvUkckUTJPCEi/Rwe4srIJhwn229aZaDgSiaX/6Fmsb5KAZW';
@@ -29,9 +29,7 @@ class _HomeState extends State<Home> {
     _fetchData();
   }
 
-  // --- LÓGICA DE DADOS ---
   Future<void> _fetchData() async {
-    // ... (código existente, sem alterações)
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -62,14 +60,11 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> _saveData() async {
-    // ... (código existente, sem alterações)
     if (_data == null || !_hasChanges) return;
     ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Row(children: [CircularProgressIndicator(), SizedBox(width: 16), Text('Salvando...')]))
     );
-
     final success = await saveDataToJsonBin(_dataAsJsonMap());
-
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     if (success) {
       setState(() => _hasChanges = false);
@@ -84,14 +79,11 @@ class _HomeState extends State<Home> {
   }
 
   Map<String, dynamic> _dataAsJsonMap() {
-    // ... (código existente, sem alterações)
     if (_data == null) return {};
     return _data!.map((key, categoria) => MapEntry(key, categoria.toJson()));
   }
 
-  // --- GERENCIAMENTO DE VÍDEOS (sem alterações aqui, a validação é no dialog) ---
   void _editVideo(TutorialVideo video) {
-    // ... (código existente, sem alterações)
     final videoCopy = TutorialVideo.fromJson(video.toJson());
     showDialog(
       context: context,
@@ -112,7 +104,6 @@ class _HomeState extends State<Home> {
   }
 
   void _addVideo() {
-    // ... (código existente, sem alterações)
     final now = DateTime.now();
     final formattedDate = "${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}";
     final newVideo = TutorialVideo(
@@ -140,7 +131,6 @@ class _HomeState extends State<Home> {
   }
 
   void _deleteVideo(TutorialVideo video) {
-    // ... (código existente, sem alterações)
     showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -163,11 +153,9 @@ class _HomeState extends State<Home> {
     );
   }
 
-  // --- GERENCIAMENTO DE CATEGORIAS (COM VALIDAÇÃO) ---
   void _addCategory() {
     final TextEditingController nameController = TextEditingController();
     final TextEditingController thumbController = TextEditingController();
-
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -186,15 +174,12 @@ class _HomeState extends State<Home> {
             onPressed: () {
               final newName = nameController.text.trim();
               final newThumb = thumbController.text.trim();
-
-              // VALIDAÇÃO ADICIONADA
               if (newName.isEmpty || newThumb.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Todos os campos são obrigatórios.'), backgroundColor: Colors.orange),
                 );
                 return;
               }
-
               if (!_data!.containsKey(newName)) {
                 setState(() {
                   _data![newName] = Categoria(thumbnail: newThumb, videos: []);
@@ -218,7 +203,6 @@ class _HomeState extends State<Home> {
   void _editCategory(String oldName) {
     final TextEditingController nameController = TextEditingController(text: oldName);
     final TextEditingController thumbController = TextEditingController(text: _data![oldName]!.thumbnail);
-
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -237,15 +221,12 @@ class _HomeState extends State<Home> {
             onPressed: () {
               final newName = nameController.text.trim();
               final newThumb = thumbController.text.trim();
-
-              // VALIDAÇÃO ADICIONADA
               if (newName.isEmpty || newThumb.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Todos os campos são obrigatórios.'), backgroundColor: Colors.orange),
                 );
                 return;
               }
-
               if (newName == oldName || !_data!.containsKey(newName)) {
                 setState(() {
                   final categoryData = _data![oldName]!;
@@ -297,13 +278,10 @@ class _HomeState extends State<Home> {
     );
   }
 
-  // --- BUILD PRINCIPAL E WIDGETS DE UI ---
-  // A partir daqui, o código é o mesmo que você enviou, pois a UI não precisa mudar.
-  // Colei aqui para garantir que o arquivo esteja completo.
-
   @override
   Widget build(BuildContext context) {
-    // ... (código existente, sem alterações)
+    final isMobile = MediaQuery.of(context).size.width < 700;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Painel de Administração | Pílulas do Conhecimento', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
@@ -333,6 +311,11 @@ class _HomeState extends State<Home> {
             ),
         ],
       ),
+      drawer: isMobile && _data != null && _data!.isNotEmpty
+          ? Drawer(
+        child: SafeArea(child: _buildSideMenu(isMobile: true)),
+      )
+          : null,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage.isNotEmpty
@@ -352,6 +335,10 @@ class _HomeState extends State<Home> {
           ],
         ),
       )
+          : isMobile
+      // MOBILE: apenas conteúdo principal. Menu fica no drawer
+          ? _buildMainContent(isMobile: true)
+      // DESKTOP/TABLET: menu e conteúdo lado a lado
           : Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -363,10 +350,10 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Widget _buildSideMenu() {
-    // ... (código existente, sem alterações)
+  /// Side menu, ajusta layout se mobile (no drawer)
+  Widget _buildSideMenu({bool isMobile = false}) {
     return Container(
-      width: 280,
+      width: isMobile ? null : 280,
       color: const Color(0xFFECEFF1),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -428,7 +415,13 @@ class _HomeState extends State<Home> {
                         ),
                       ],
                     ),
-                    onTap: () => setState(() => _selectedCategory = key),
+                    onTap: () {
+                      setState(() {
+                        _selectedCategory = key;
+                      });
+                      // se mobile, fecha o drawer
+                      if (isMobile) Navigator.of(context).pop();
+                    },
                   ),
                 );
               },
@@ -439,265 +432,118 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Widget _buildMainContent() {
-    // ... (código existente, sem alterações)
+  /// Conteúdo principal, ajusta paddings se mobile
+  Widget _buildMainContent({bool isMobile = false}) {
     if (_selectedCategory == null) {
-      return const Expanded(child: Center(child: Text('Selecione uma categoria para começar')));
+      return Expanded(
+        child: Center(child: Text('Selecione uma categoria para começar')),
+      );
     }
     final videos = _data![_selectedCategory]!.videos;
-    return Expanded(
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    'Editando: $_selectedCategory',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blueGrey[900],
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                ElevatedButton.icon(
-                  onPressed: _addVideo,
-                  icon: const Icon(Icons.add_circle_outline),
-                  label: const Text('Adicionar Vídeo'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[700],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1, indent: 24, endIndent: 24),
-          Expanded(
-            child: videos.isEmpty
-                ? const Center(child: Text('Nenhum vídeo nesta categoria. Clique em "Adicionar Vídeo" para começar.'))
-                : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: videos.length,
-              itemBuilder: (context, index) {
-                final video = videos[index];
-                return Card(
-                  elevation: 2,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.grey.shade200),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Colors.grey[200],
-                          backgroundImage: video.thumbnail.isNotEmpty ? NetworkImage(video.thumbnail) : null,
-                          child: video.thumbnail.isEmpty ? const Icon(Icons.video_library_outlined, color: Colors.grey) : null,
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                video.titulo['pt'] ?? 'Vídeo sem título',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                video.subtitulo['pt'] ?? 'Sem subtítulo',
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.edit_outlined, color: Colors.orangeAccent),
-                          tooltip: 'Editar vídeo',
-                          onPressed: () => _editVideo(video),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_forever_outlined, color: Colors.redAccent),
-                          tooltip: 'Excluir vídeo',
-                          onPressed: () => _deleteVideo(video),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
-// ----- ADAPTAÇÃO NECESSÁRIA NO VIDEO EDITOR DIALOG -----
-// Certifique-se de que o seu `video_editor.dart` tenha a validação.
-// Colei aqui a versão com validação para garantir que tudo funcione.
-// Se já estiver em um arquivo separado, apenas atualize-o com este conteúdo.
-
-class VideoEditorDialog extends StatefulWidget {
-  final TutorialVideo video;
-  final Function(TutorialVideo) onSave;
-  final bool isNew;
-
-  const VideoEditorDialog({Key? key, required this.video, required this.onSave, this.isNew = false}) : super(key: key);
-
-  @override
-  _VideoEditorDialogState createState() => _VideoEditorDialogState();
-}
-
-class _VideoEditorDialogState extends State<VideoEditorDialog> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  late TutorialVideo _editedVideo;
-  String? _errorMessage;
-
-  final _languages = ['pt', 'en', 'es', 'fr'];
-  final Map<String, TextEditingController> _tituloControllers = {};
-  final Map<String, TextEditingController> _subtituloControllers = {};
-  final Map<String, TextEditingController> _tagsControllers = {};
-  final Map<String, TextEditingController> _urlControllers = {};
-  late TextEditingController _thumbnailController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: _languages.length, vsync: this);
-
-    _editedVideo = TutorialVideo.fromJson(widget.video.toJson()); // Cópia segura
-
-    _thumbnailController = TextEditingController(text: _editedVideo.thumbnail);
-
-    for (var lang in _languages) {
-      _tituloControllers[lang] = TextEditingController(text: _editedVideo.titulo[lang] ?? '');
-      _subtituloControllers[lang] = TextEditingController(text: _editedVideo.subtitulo[lang] ?? '');
-      _tagsControllers[lang] = TextEditingController(text: (_editedVideo.tags[lang] as List<dynamic>?)?.join(', ') ?? '');
-      _urlControllers[lang] = TextEditingController(text: _editedVideo.url[lang] ?? '');
-    }
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    _thumbnailController.dispose();
-    _tituloControllers.values.forEach((c) => c.dispose());
-    _subtituloControllers.values.forEach((c) => c.dispose());
-    _tagsControllers.values.forEach((c) => c.dispose());
-    _urlControllers.values.forEach((c) => c.dispose());
-    super.dispose();
-  }
-
-  bool _validateFields() {
-    if (_thumbnailController.text.trim().isEmpty) return false;
-
-    for(final lang in _languages) {
-      if (_tituloControllers[lang]!.text.trim().isEmpty ||
-          _subtituloControllers[lang]!.text.trim().isEmpty ||
-          _tagsControllers[lang]!.text.trim().isEmpty ||
-          _urlControllers[lang]!.text.trim().isEmpty) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  void _onSave() {
-    // VALIDAÇÃO
-    if (!_validateFields()) {
-      setState(() {
-        _errorMessage = 'Todos os campos em todos os idiomas devem ser preenchidos.';
-      });
-      return;
-    }
-
-    // Atualiza o objeto _editedVideo com os dados dos controllers
-    for (var lang in _languages) {
-      _editedVideo.titulo[lang] = _tituloControllers[lang]!.text;
-      _editedVideo.subtitulo[lang] = _subtituloControllers[lang]!.text;
-      _editedVideo.tags[lang] = _tagsControllers[lang]!.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-      _editedVideo.url[lang] = _urlControllers[lang]!.text;
-    }
-    _editedVideo.thumbnail = _thumbnailController.text;
-    if (widget.isNew) {
-      final now = DateTime.now();
-      _editedVideo.dataAtualizacao = "${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}";
-    }
-
-    widget.onSave(_editedVideo);
-    Navigator.of(context).pop();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.isNew ? 'Adicionar Novo Vídeo' : 'Editar Vídeo'),
-      content: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.7,
-        height: MediaQuery.of(context).size.height * 0.7,
-        child: Column(
-          children: [
-            TextField(
-              controller: _thumbnailController,
-              decoration: const InputDecoration(labelText: 'URL da Thumbnail do Vídeo', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 16),
-            TabBar(
-              controller: _tabController,
-              tabs: _languages.map((lang) => Tab(text: lang.toUpperCase())).toList(),
-              labelColor: Colors.blue,
-              unselectedLabelColor: Colors.grey,
-            ),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: _languages.map((lang) {
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        TextField(controller: _tituloControllers[lang], decoration: const InputDecoration(labelText: 'Título')),
-                        const SizedBox(height: 8),
-                        TextField(controller: _subtituloControllers[lang], decoration: const InputDecoration(labelText: 'Subtítulo'), maxLines: 3),
-                        const SizedBox(height: 8),
-                        TextField(controller: _tagsControllers[lang], decoration: const InputDecoration(labelText: 'Tags (separadas por vírgula)')),
-                        const SizedBox(height: 8),
-                        TextField(controller: _urlControllers[lang], decoration: const InputDecoration(labelText: 'URL do Vídeo')),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-            // Mostra a mensagem de erro se houver
-            if (_errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
+    final content = Column(
+      children: [
+        Padding(
+          padding: isMobile
+              ? const EdgeInsets.fromLTRB(16, 8, 16, 8)
+              : const EdgeInsets.fromLTRB(24, 16, 24, 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
                 child: Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                  'Editando: $_selectedCategory',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueGrey[900],
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-          ],
+              ElevatedButton.icon(
+                onPressed: _addVideo,
+                icon: const Icon(Icons.add_circle_outline),
+                label: isMobile ? const Text('Novo') : const Text('Adicionar Vídeo'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[700],
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 20, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  minimumSize: isMobile ? const Size(80, 40) : const Size(140, 44),
+                  textStyle: TextStyle(fontSize: isMobile ? 14 : 16),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
-        ElevatedButton(onPressed: _onSave, child: const Text('Salvar')),
+        Divider(height: 1, indent: isMobile ? 16 : 24, endIndent: isMobile ? 16 : 24),
+        Expanded(
+          child: videos.isEmpty
+              ? const Center(child: Text('Nenhum vídeo nesta categoria. Clique em "Adicionar Vídeo" para começar.'))
+              : ListView.builder(
+            padding: EdgeInsets.all(isMobile ? 8 : 16),
+            itemCount: videos.length,
+            itemBuilder: (context, index) {
+              final video = videos[index];
+              return Card(
+                elevation: 2,
+                margin: EdgeInsets.only(bottom: isMobile ? 10 : 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: Colors.grey.shade200),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(isMobile ? 8.0 : 14.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        radius: isMobile ? 22 : 30,
+                        backgroundColor: Colors.grey[200],
+                        backgroundImage: video.thumbnail.isNotEmpty ? NetworkImage(video.thumbnail) : null,
+                        child: video.thumbnail.isEmpty ? const Icon(Icons.video_library_outlined, color: Colors.grey) : null,
+                      ),
+                      SizedBox(width: isMobile ? 10 : 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              video.titulo['pt'] ?? 'Vídeo sem título',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: isMobile ? 15 : 16),
+                              maxLines: 2, overflow: TextOverflow.ellipsis,
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              video.subtitulo['pt'] ?? 'Sem subtítulo',
+                              maxLines: isMobile ? 2 : 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.edit_outlined, color: Colors.orangeAccent, size: isMobile ? 22 : 26),
+                        tooltip: 'Editar vídeo',
+                        onPressed: () => _editVideo(video),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.delete_forever_outlined, color: Colors.redAccent, size: isMobile ? 22 : 26),
+                        tooltip: 'Excluir vídeo',
+                        onPressed: () => _deleteVideo(video),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
       ],
     );
+
+    return isMobile ? content : Expanded(child: content);
   }
 }
+
