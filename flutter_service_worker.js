@@ -3,7 +3,7 @@ const MANIFEST = 'flutter-app-manifest';
 const TEMP = 'flutter-temp-cache';
 const CACHE_NAME = 'flutter-app-cache';
 
-const RESOURCES = {"flutter_bootstrap.js": "4dd83deb11d7f832bc3e56890be7e93a",
+const RESOURCES = {"flutter_bootstrap.js": "dc32d33b0d25e8e42454a54b14960459",
 "flutter.js": "83d881c1dbb6d6bcd6b42e274605b69c",
 "favicon.png": "9751de714997492b58244a46c3f55118",
 "icons/Icon-maskable-512.png": "164243d9cdb4ed08779df919218effbd",
@@ -21,7 +21,7 @@ const RESOURCES = {"flutter_bootstrap.js": "4dd83deb11d7f832bc3e56890be7e93a",
 "canvaskit/skwasm.js.symbols": "e72c79950c8a8483d826a7f0560573a1",
 "canvaskit/canvaskit.wasm": "7a3f4ae7d65fc1de6a6e7ddd3224bc93",
 "canvaskit/canvaskit.js.symbols": "bdcd3835edf8586b6d6edfce8749fb77",
-"main.dart.js": "7997c4087a9b6539f8e2febb34191e9b",
+"main.dart.js": "a51fc9c3d751971553d56048e6dce206",
 "index.html": "f6fbdff3d12a18cbcdc85405f30eb9ca",
 "/": "f6fbdff3d12a18cbcdc85405f30eb9ca",
 "assets/packages/wakelock_plus/assets/no_sleep.js": "7748a45cd593f33280669b29c2c8919a",
