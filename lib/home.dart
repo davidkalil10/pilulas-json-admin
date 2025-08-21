@@ -20,8 +20,8 @@ class _HomeState extends State<Home> {
   bool _hasChanges = false;
   String _errorMessage = '';
   // Suas chaves e IDs
-  static const String _binId = 'kkkk689c0085ae596e708fc8b523';
-  static const String _apiKey = r'kkkk$2a$10$z4gvUqvUkckUTJPCEi/Rwe4srIJhwn229aZaDgSiaX/6Fmsb5KAZW';
+  static const String _binId = '689c0085ae596e708fc8b523';
+  static const String _apiKey = r'$2a$10$z4gvUqvUkckUTJPCEi/Rwe4srIJhwn229aZaDgSiaX/6Fmsb5KAZW';
 
   @override
   void initState() {
