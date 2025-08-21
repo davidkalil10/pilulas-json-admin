@@ -5,6 +5,8 @@ import 'package:pilulasdoconhecimento/models/categoria.dart';
 import 'package:pilulasdoconhecimento/models/model_video.dart';
 import 'package:pilulasdoconhecimento/services/api_service.dart';
 import 'package:pilulasdoconhecimento/widgets/video_editor.dart';
+// ADICIONE ESTE IMPORT (dependência uuid):
+import 'package:uuid/uuid.dart';
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -19,7 +21,6 @@ class _HomeState extends State<Home> {
   bool _isLoading = true;
   bool _hasChanges = false;
   String _errorMessage = '';
-  // Suas chaves e IDs
   static const String _binId = '689c0085ae596e708fc8b523';
   static const String _apiKey = r'$2a$10$z4gvUqvUkckUTJPCEi/Rwe4srIJhwn229aZaDgSiaX/6Fmsb5KAZW';
 
@@ -90,9 +91,10 @@ class _HomeState extends State<Home> {
       barrierDismissible: false,
       builder: (context) => VideoEditorDialog(
         video: videoCopy,
+        isNew: false,
         onSave: (updatedVideo) {
           setState(() {
-            final index = _data![_selectedCategory]!.videos.indexOf(video);
+            final index = _data![_selectedCategory]!.videos.indexWhere((v) => v.id == updatedVideo.id);
             if (index != -1) {
               _data![_selectedCategory]!.videos[index] = updatedVideo;
               _hasChanges = true;
@@ -106,13 +108,16 @@ class _HomeState extends State<Home> {
   void _addVideo() {
     final now = DateTime.now();
     final formattedDate = "${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}";
+    final uuid = const Uuid().v4(); // Gera UUID v4 automaticamente
     final newVideo = TutorialVideo(
       titulo: {'pt': '', 'en': '', 'es': '', 'fr': ''},
       subtitulo: {'pt': '', 'en': '', 'es': '', 'fr': ''},
       tags: {'pt': [], 'en': [], 'es': [], 'fr': []},
       url: {'pt': '', 'en': '', 'es': '', 'fr': ''},
+      categoria: {'pt': '', 'en': '', 'es': '', 'fr': ''}, // Campo novo
       thumbnail: '',
       dataAtualizacao: formattedDate,
+      id: uuid, // atributo imutável
     );
     showDialog(
       context: context,
@@ -141,7 +146,7 @@ class _HomeState extends State<Home> {
             TextButton(
               onPressed: () {
                 setState(() {
-                  _data![_selectedCategory]!.videos.remove(video);
+                  _data![_selectedCategory]!.videos.removeWhere((v) => v.id == video.id);
                   _hasChanges = true;
                 });
                 Navigator.of(context).pop();
@@ -152,6 +157,8 @@ class _HomeState extends State<Home> {
         )
     );
   }
+
+  // ... categoria CRUD igual sua versão ...
 
   void _addCategory() {
     final TextEditingController nameController = TextEditingController();
@@ -265,7 +272,7 @@ class _HomeState extends State<Home> {
               setState(() {
                 _data!.remove(categoryName);
                 if (_selectedCategory == categoryName) {
-                  _selectedCategory = _data!.keys.isNotEmpty ? _data!.keys.first : null;
+                  _selectedCategory =_data!.keys.isNotEmpty ? _data!.keys.first : null;
                 }
                 _hasChanges = true;
               });
@@ -281,46 +288,50 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 700;
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Painel de Administração | Pílulas do Conhecimento', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF37474F), Color(0xFF263238)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        actions: [
-          if (_hasChanges)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: ElevatedButton.icon(
-                onPressed: _saveData,
-                icon: const Icon(Icons.save_as_outlined, size: 20),
-                label: const Text('Salvar Alterações'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2E7D32),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
+        appBar: AppBar(
+          title: const Text('Painel de Administração | Pílulas do Conhecimento', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF37474F), Color(0xFF263238)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
-        ],
-      ),
-      drawer: isMobile && _data != null && _data!.isNotEmpty
-          ? Drawer(
-        child: SafeArea(child: _buildSideMenu(isMobile: true)),
-      )
-          : null,
+          ),
+          actions: [
+            if (_hasChanges)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: ElevatedButton.icon(
+                  onPressed: _saveData,
+                  icon: const Icon(Icons.save_as_outlined, size: 20),
+                  label: const Text('Salvar Alterações'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2E7D32),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        drawer: isMobile && _data != null &&_data!.isNotEmpty
+    ? Drawer(
+    child: SafeArea(child: _buildSideMenu(isMobile: true)),
+    )
+        : null,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage.isNotEmpty
-          ? Center(child: Text(_errorMessage, style: const TextStyle(color: Colors.red, fontSize: 16)))
-          : _data == null || _data!.isEmpty
+          ? Center(
+        child: Text(
+          _errorMessage,
+          style: const TextStyle(color: Colors.red, fontSize: 16),
+        ),
+      )
+          : (_data == null || _data!.isEmpty)
           ? Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -335,10 +346,8 @@ class _HomeState extends State<Home> {
           ],
         ),
       )
-          : isMobile
-      // MOBILE: apenas conteúdo principal. Menu fica no drawer
+          : (isMobile
           ? _buildMainContent(isMobile: true)
-      // DESKTOP/TABLET: menu e conteúdo lado a lado
           : Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -346,11 +355,10 @@ class _HomeState extends State<Home> {
           const VerticalDivider(width: 1, thickness: 1),
           _buildMainContent(),
         ],
+      )
       ),
     );
   }
-
-  /// Side menu, ajusta layout se mobile (no drawer)
   Widget _buildSideMenu({bool isMobile = false}) {
     return Container(
       width: isMobile ? null : 280,
@@ -419,7 +427,6 @@ class _HomeState extends State<Home> {
                       setState(() {
                         _selectedCategory = key;
                       });
-                      // se mobile, fecha o drawer
                       if (isMobile) Navigator.of(context).pop();
                     },
                   ),
@@ -431,8 +438,6 @@ class _HomeState extends State<Home> {
       ),
     );
   }
-
-  /// Conteúdo principal, ajusta paddings se mobile
   Widget _buildMainContent({bool isMobile = false}) {
     if (_selectedCategory == null) {
       return Expanded(
@@ -440,7 +445,6 @@ class _HomeState extends State<Home> {
       );
     }
     final videos = _data![_selectedCategory]!.videos;
-
     final content = Column(
       children: [
         Padding(
@@ -520,6 +524,17 @@ class _HomeState extends State<Home> {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(color: Colors.grey[600]),
                             ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Categoria: ${video.categoria['pt'] ?? ''}',
+                              style: TextStyle(color: Colors.blueGrey),
+                              maxLines: 1, overflow: TextOverflow.ellipsis,
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'ID: ${video.id}',
+                              style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+                            ),
                           ],
                         ),
                       ),
@@ -542,9 +557,6 @@ class _HomeState extends State<Home> {
         ),
       ],
     );
-
     return isMobile ? content : Expanded(child: content);
   }
 }
-
-
