@@ -6,9 +6,11 @@ class TutorialVideo {
   final Map<String, dynamic> subtitulo;
   final Map<String, dynamic> tags;
   final Map<String, dynamic> url;
+  final Map<String, dynamic> categoria;
 
   String thumbnail;
   String dataAtualizacao;
+  final String id;        // Novo ID único do vídeo (UUID v4)
 
   TutorialVideo({
     required this.titulo,
@@ -17,6 +19,8 @@ class TutorialVideo {
     required this.url,
     required this.thumbnail,
     required this.dataAtualizacao,
+    required this.categoria,
+    required this.id,
   });
 
   factory TutorialVideo.fromJson(Map<String, dynamic> json) {
@@ -27,6 +31,8 @@ class TutorialVideo {
       url: json['URL'] as Map<String, dynamic>,
       thumbnail: json['thumbnail'] ?? "",
       dataAtualizacao: json['data_atualizacao'] ?? "",
+      categoria: json['categoria'] as Map<String, dynamic>,
+      id: json['id'] ?? "", // vem do JSON, string (UUID v4)
     );
   }
 
@@ -39,6 +45,8 @@ class TutorialVideo {
       'URL': url,
       'thumbnail': thumbnail,
       'data_atualizacao': dataAtualizacao,
+      'id': id,
+      'categoria': categoria
     };
   }
 
